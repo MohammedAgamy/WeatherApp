@@ -1,9 +1,10 @@
-package com.agamy.weatherapp.presentation.component
+package com.agamy.weatherapp.presentation.screen.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -22,21 +23,47 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.agamy.weatherapp.R
+import com.agamy.weatherapp.data.RetrofitClient
+import com.agamy.weatherapp.data.model.WeatherModel
+import com.agamy.weatherapp.data.repository.WeatherRepositoryImpl
+import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
+import com.agamy.weatherapp.presentation.intent.WeatherIntent
+import com.agamy.weatherapp.presentation.state.WeatherState
+import com.agamy.weatherapp.presentation.viewmodel.WeatherViewModel
+import com.agamy.weatherapp.presentation.viewmodel.WeatherViewModelFactory
 
 // ── Colors ──
-private val SheetBg      = Color(0xFF1A1040)
-private val PurpleLight  = Color(0xC87B5EA7)
-private val PurpleDark   = Color(0xFF4A3880)
-private val PurpleMuted  = Color(0xFF8A7BA8)
-private val PurpleText   = Color(0xFFB39DDB)
-private val CardDark     = Color(0xFF2A1F50)
+private val SheetBg = Color(0xFF1A1040)
+private val PurpleLight = Color(0xC87B5EA7)
+private val PurpleDark = Color(0xFF4A3880)
+private val PurpleMuted = Color(0xFF8A7BA8)
+private val PurpleText = Color(0xFFB39DDB)
+private val CardDark = Color(0xFF2A1F50)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeatherScreen() {
+
+
+    val viewModel: WeatherViewModel = viewModel(
+        factory = WeatherViewModelFactory(
+            GetWeatherUseCase(
+                WeatherRepositoryImpl(RetrofitClient.apiService)
+            )
+        )
+    )
+
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.sendIntent(WeatherIntent.LoadWeather)
+    }
+
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
@@ -90,44 +117,83 @@ fun WeatherScreen() {
                 modifier = Modifier
                     .size(700.dp)
                     .align(Alignment.TopCenter)
-                    .offset(y = 200.dp)
-
-                ,
+                    .offset(y = 200.dp),
                 contentScale = ContentScale.Crop
             )
 
-            // Top Info
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Cairo, Egypt",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "28°C",
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Clear Sky",
-                    fontSize = 18.sp,
-                    color = Color.White.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("H: 24°", fontSize = 16.sp, color = Color.White.copy(alpha = 0.6f))
-                    Text("L: 18°", fontSize = 16.sp, color = Color.White.copy(alpha = 0.6f))
-                }
+            when (state) {
+                is WeatherState.Error -> ErrorContent((state as WeatherState.Error).massage)
+                WeatherState.Idle -> IdleContent()
+                WeatherState.Loading -> LoadingContent()
+                is WeatherState.Success -> WeatherContent((state as WeatherState.Success).current)
             }
+
+        }
+    }
+}
+
+
+@Composable
+fun ErrorContent(message: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = message, color = Color.Red, textAlign = TextAlign.Center)
+    }
+}
+@Composable
+fun IdleContent() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Loading weather...", color = Color.Gray)
+    }
+}
+
+@Composable
+fun LoadingContent() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+fun WeatherContent(weatherModel: WeatherModel) {
+    // Top Info
+    Column(
+        modifier = Modifier
+            // .align(Alignment.TopCenter)
+            .padding(top = 50.dp),
+        horizontalAlignment = Alignment.CenterHorizontally ,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = weatherModel.location.country,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "${weatherModel.current.temp_c}°",
+            fontSize = 64.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = weatherModel.current.condition.text,
+            fontSize = 18.sp,
+            color = Color.White.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                "H: ${weatherModel.current.gust_kph}°",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.6f)
+            )
+            Text(
+                "L: ${weatherModel.current.gust_mph}°",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.6f)
+            )
         }
     }
 }
@@ -260,10 +326,10 @@ fun WeatherBottomSheetContent() {
 fun HourlyForecastRow() {
     val hours = listOf(
         HourWeather("12 AM", "19°", WeatherType.CLOUDY),
-        HourWeather("Now",   "19°", WeatherType.RAINY,  isNow = true),
-        HourWeather("2 AM",  "18°", WeatherType.CLOUDY),
-        HourWeather("3 AM",  "19°", WeatherType.SUNNY),
-        HourWeather("4 AM",  "19°", WeatherType.CLOUDY),
+        HourWeather("Now", "19°", WeatherType.RAINY, isNow = true),
+        HourWeather("2 AM", "18°", WeatherType.CLOUDY),
+        HourWeather("3 AM", "19°", WeatherType.SUNNY),
+        HourWeather("4 AM", "19°", WeatherType.CLOUDY),
     )
     LazyRow(
         contentPadding = PaddingValues(horizontal = 20.dp),

@@ -5,8 +5,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.agamy.weatherapp.Routes
-import com.agamy.weatherapp.presentation.home.HomeScreen
-import com.agamy.weatherapp.presentation.splash.SplashScreen
+import com.agamy.weatherapp.presentation.screen.home.HomeScreen
+import com.agamy.weatherapp.presentation.screen.splash.SplashScreen
 
 @Composable
 fun NavGraph() {

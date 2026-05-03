@@ -1,4 +1,4 @@
-package com.agamy.weatherapp.presentation.splash
+package com.agamy.weatherapp.presentation.screen.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
