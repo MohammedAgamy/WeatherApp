@@ -16,8 +16,9 @@ class WeatherViewModel(
     private val getWeatherUseCase: GetWeatherUseCase
 ) : ViewModel() {
 
-    private val lat = 30.0023621
-    private val lon = 31.1472895
+    private var lat: Double = 0.0
+    private var lon: Double = 0.0
+
     private val _state = MutableStateFlow<WeatherState>(WeatherState.Idle)
     val state: StateFlow<WeatherState> = _state
 
@@ -41,6 +42,7 @@ class WeatherViewModel(
                 when (intent) {
                     WeatherIntent.LoadWeather -> fetchWeather()
                     WeatherIntent.RefreshWeather -> fetchWeather()
+                    is WeatherIntent.LoadWeatherWithLocation -> TODO()
                 }
             }
         }
