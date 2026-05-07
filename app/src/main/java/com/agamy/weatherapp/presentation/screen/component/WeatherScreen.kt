@@ -1,5 +1,8 @@
 package com.agamy.weatherapp.presentation.screen.component
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,14 +24,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.agamy.weatherapp.R
 import com.agamy.weatherapp.data.RetrofitClient
+import com.agamy.weatherapp.data.location.LocationProvider
 import com.agamy.weatherapp.data.model.WeatherModel
 import com.agamy.weatherapp.data.repository.WeatherRepositoryImpl
 import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
@@ -36,6 +42,7 @@ import com.agamy.weatherapp.presentation.intent.WeatherIntent
 import com.agamy.weatherapp.presentation.state.WeatherState
 import com.agamy.weatherapp.presentation.viewmodel.WeatherViewModel
 import com.agamy.weatherapp.presentation.viewmodel.WeatherViewModelFactory
+import kotlinx.coroutines.launch
 
 // ── Colors ──
 private val SheetBg = Color(0xFF1A1040)
@@ -46,13 +53,14 @@ private val PurpleLight = Color(0xC87B5EA7)
 @Composable
 fun WeatherScreen() {
 
+    val context = LocalContext.current
+    val locationProvider = remember { LocationProvider(context) }
+    val apiService = remember { RetrofitClient.apiService }
+    val repository = remember { WeatherRepositoryImpl(apiService) }
+    val useCase = remember { GetWeatherUseCase(repository) }
 
     val viewModel: WeatherViewModel = viewModel(
-        factory = WeatherViewModelFactory(
-            GetWeatherUseCase(
-                WeatherRepositoryImpl(RetrofitClient.apiService)
-            )
-        )
+        factory = WeatherViewModelFactory(useCase)
     )
 
     val state by viewModel.state.collectAsState()
@@ -60,6 +68,44 @@ fun WeatherScreen() {
     LaunchedEffect(Unit) {
         viewModel.sendIntent(WeatherIntent.LoadWeather)
     }
+
+    // Permission Launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        if (granted) {
+            // ✅ بعد ما الـ permission اتوافق، جيب الـ location
+            viewModel.viewModelScope.launch {
+                val latLon = locationProvider.getCurrentLatLon()
+                if (latLon != null) {
+                    viewModel.sendIntent(
+                        WeatherIntent.LoadWeatherWithLocation(
+                            lat = latLon.first,
+                            lon = latLon.second
+                        )
+                    )
+                } else {
+                    // Fallback لو الـ GPS مشتغلش
+                    viewModel.sendIntent(WeatherIntent.LoadWeather)
+                }
+            }
+        }
+    }
+
+    // اطلب الـ Permission أول ما الـ Screen يفتح
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
 
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(

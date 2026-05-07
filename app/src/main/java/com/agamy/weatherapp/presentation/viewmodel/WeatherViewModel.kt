@@ -42,12 +42,17 @@ class WeatherViewModel(
                 when (intent) {
                     WeatherIntent.LoadWeather -> fetchWeather()
                     WeatherIntent.RefreshWeather -> fetchWeather()
-                    is WeatherIntent.LoadWeatherWithLocation -> TODO()
+                    is WeatherIntent.LoadWeatherWithLocation  -> {
+                        lat = intent.lat
+                        lon = intent.lon
+                        fetchWeather()
+                    }
                 }
             }
         }
 
     }
+
 
     private suspend fun fetchWeather() {
         _state.value = WeatherState.Loading
