@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.agamy.weatherapp.Routes
 import com.agamy.weatherapp.presentation.screen.home.HomeScreen
+import com.agamy.weatherapp.presentation.screen.search.SearchScreen
 import com.agamy.weatherapp.presentation.screen.splash.SplashScreen
 
 @Composable
@@ -14,15 +15,18 @@ fun NavGraph() {
     val navController = rememberNavController()
 
     NavHost(
-        navController = navController ,
+        navController = navController,
         startDestination = Routes.SPLASH.routes
-    ){
-        composable(Routes.SPLASH.routes){
+    ) {
+        composable(Routes.SPLASH.routes) {
             SplashScreen(navController)
         }
 
-        composable(Routes.HOME.routes){
-            HomeScreen()
+        composable(Routes.HOME.routes) {
+            HomeScreen(navController)
+        }
+        composable(Routes.SEARCH.routes) {
+            SearchScreen()
         }
     }
 }

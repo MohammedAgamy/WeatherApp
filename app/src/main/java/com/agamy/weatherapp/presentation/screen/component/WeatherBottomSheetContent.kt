@@ -38,7 +38,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.agamy.weatherapp.Routes
 import com.agamy.weatherapp.data.model.Forecast
 import com.agamy.weatherapp.data.model.Forecastday
 import com.agamy.weatherapp.data.model.Hour
@@ -57,7 +59,9 @@ private val CardDark = Color(0xFF2A1F50)
 
 @Composable
 fun WeatherBottomSheetContent(
-    hourlyForecast: List<Hour> = emptyList()
+    hourlyForecast: List<Hour> = emptyList(),
+    weeklyForecast: List<Forecastday> = emptyList(),
+    navController: NavController
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Hourly Forecast", "Weekly Forecast")
@@ -111,7 +115,7 @@ fun WeatherBottomSheetContent(
         // ── Content ──
         when (selectedTab) {
             0 -> HourlyForecastRow(hourlyForecast)
-            1 -> WeeklyForecastRow()
+            1 -> WeeklyForecastRow(weeklyForecast)
         }
 
         Spacer(modifier = Modifier.height(28.dp))
@@ -157,7 +161,13 @@ fun WeatherBottomSheetContent(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add",
                     tint = Color.White,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable(
+                            onClick = {
+                                navController.navigate(Routes.SEARCH.routes)
+                            }
+                        )
                 )
             }
 
@@ -173,7 +183,9 @@ fun WeatherBottomSheetContent(
                     imageVector = Icons.Default.List,
                     contentDescription = "List",
                     tint = PurpleMuted,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier
+                        .size(20.dp)
+
                 )
             }
         }
@@ -245,16 +257,19 @@ fun HourlyItem(data: Hour, isNow: Boolean = false) {
 
 // ── Weekly Row ──
 @Composable
-fun WeeklyForecastRow() {
-    val days = listOf(
-        DayWeather("Mon", "24°", "17°", WeatherType.SUNNY),
-        DayWeather("Tue", "22°", "16°", WeatherType.CLOUDY),
-        DayWeather("Wed", "19°", "14°", WeatherType.RAINY),
-        DayWeather("Thu", "21°", "15°", WeatherType.CLOUDY),
-        DayWeather("Fri", "26°", "18°", WeatherType.SUNNY),
-        DayWeather("Sat", "23°", "16°", WeatherType.CLOUDY),
-        DayWeather("Sun", "20°", "15°", WeatherType.SNOWY),
-    )
+fun WeeklyForecastRow(days: List<Forecastday>) {
+    if (days.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF7B5EA7), modifier = Modifier.size(32.dp))
+        }
+        return
+    }
+
 
     Column(
         modifier = Modifier
@@ -262,7 +277,7 @@ fun WeeklyForecastRow() {
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        days.forEach { day ->
+        days.forEach { forecastday ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -271,28 +286,50 @@ fun WeeklyForecastRow() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                // اليوم - استخرجه من الـ date "2024-01-15"
                 Text(
-                    text = day.day,
+                    text = getDayName(forecastday.date),
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.width(40.dp)
+                    modifier = Modifier.width(44.dp)
                 )
-                Text(text = day.type.emoji, fontSize = 20.sp)
+
+                // الأيقونة
+                AsyncImage(
+                    model = "https:${forecastday.day.condition.icon}",
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+
+                // درجات الحرارة
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = day.high,
+                        text = "${forecastday.day.maxtemp_c.toInt()}°",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = day.low,
+                        text = "${forecastday.day.mintemp_c.toInt()}°",
                         color = PurpleMuted,
                         fontSize = 14.sp
                     )
                 }
             }
         }
+    }
+}
+
+
+// format handel
+fun getDayName(dateStr: String): String {
+    return try {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ENGLISH)
+        val date = sdf.parse(dateStr)
+        val dayFormat = java.text.SimpleDateFormat("EEE", java.util.Locale.ENGLISH)
+        dayFormat.format(date!!)
+    } catch (e: Exception) {
+        dateStr
     }
 }

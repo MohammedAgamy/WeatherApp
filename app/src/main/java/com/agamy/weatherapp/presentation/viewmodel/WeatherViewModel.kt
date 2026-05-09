@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.agamy.weatherapp.domain.usecase.GetHourUseCase
 import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
+import com.agamy.weatherapp.domain.usecase.GetWeeklyForecastUseCase
 import com.agamy.weatherapp.presentation.intent.WeatherIntent
 import com.agamy.weatherapp.presentation.state.WeatherState
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 
 class WeatherViewModel(
     private val getWeatherUseCase: GetWeatherUseCase,
-    private val getHourUseCase: GetHourUseCase
+    private val getHourUseCase: GetHourUseCase,
+    private val getWeeklyForecastUseCase: GetWeeklyForecastUseCase
 ) : ViewModel() {
 
     private var lat: Double = 0.0
@@ -61,13 +63,15 @@ class WeatherViewModel(
 
         val weatherResult = getWeatherUseCase(lat, lon)
         val hourResult = getHourUseCase(lat, lon)
+        val weeklyResult = getWeeklyForecastUseCase(lat, lon)
 
 
         weatherResult.fold(
             onSuccess = { weather ->
                 _state.value = WeatherState.Success(
                     current = weather,
-                    hourlyForecast = hourResult.getOrDefault(emptyList()) // ✅
+                    hourlyForecast = hourResult.getOrDefault(emptyList()),
+                    weeklyForecast = weeklyResult.getOrDefault(emptyList())
                 )
             },
             onFailure = { error ->
@@ -82,12 +86,14 @@ class WeatherViewModel(
 
 class WeatherViewModelFactory(
     private val getWeatherUseCase: GetWeatherUseCase,
-    private val getHourUseCase: GetHourUseCase
+    private val getHourUseCase: GetHourUseCase ,
+    private val getWeeklyForecastUseCase: GetWeeklyForecastUseCase
+
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WeatherViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return WeatherViewModel(getWeatherUseCase, getHourUseCase) as T
+            return WeatherViewModel(getWeatherUseCase, getHourUseCase,getWeeklyForecastUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

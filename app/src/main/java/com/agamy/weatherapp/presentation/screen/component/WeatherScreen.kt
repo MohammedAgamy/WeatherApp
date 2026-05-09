@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.agamy.weatherapp.R
 import com.agamy.weatherapp.data.RetrofitClient
 import com.agamy.weatherapp.data.location.LocationProvider
@@ -39,6 +40,7 @@ import com.agamy.weatherapp.data.model.WeatherModel
 import com.agamy.weatherapp.data.repository.WeatherRepositoryImpl
 import com.agamy.weatherapp.domain.usecase.GetHourUseCase
 import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
+import com.agamy.weatherapp.domain.usecase.GetWeeklyForecastUseCase
 import com.agamy.weatherapp.presentation.intent.WeatherIntent
 import com.agamy.weatherapp.presentation.state.WeatherState
 import com.agamy.weatherapp.presentation.viewmodel.WeatherViewModel
@@ -52,7 +54,7 @@ private val PurpleLight = Color(0xC87B5EA7)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WeatherScreen() {
+fun WeatherScreen(navController : NavController) {
 
     val context = LocalContext.current
     val locationProvider = remember { LocationProvider(context) }
@@ -60,9 +62,11 @@ fun WeatherScreen() {
     val repository = remember { WeatherRepositoryImpl(apiService) }
     val useCase = remember { GetWeatherUseCase(repository) }
     val useCaseHour = remember { GetHourUseCase(repository) }
+    val weeklyUseCase = remember { GetWeeklyForecastUseCase(repository) }
+
 
     val viewModel: WeatherViewModel = viewModel(
-        factory = WeatherViewModelFactory(useCase,useCaseHour)
+        factory = WeatherViewModelFactory(useCase, useCaseHour , weeklyUseCase)
     )
 
     val state by viewModel.state.collectAsState()
@@ -140,10 +144,12 @@ fun WeatherScreen() {
         sheetPeekHeight = 340.dp,
         sheetContent = {
 
-
-            val hourlyForecast = (state as? WeatherState.Success)?.hourlyForecast
-                ?: emptyList()
-            WeatherBottomSheetContent(hourlyForecast = hourlyForecast)
+            val successState = state as? WeatherState.Success
+            WeatherBottomSheetContent(
+                hourlyForecast = successState?.hourlyForecast ?: emptyList(),
+                weeklyForecast = successState?.weeklyForecast ?: emptyList() ,
+                navController = navController
+            )
         }
     ) { innerPadding ->
         Box(

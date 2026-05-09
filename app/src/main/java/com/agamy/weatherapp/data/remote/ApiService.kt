@@ -21,4 +21,11 @@ interface ApiService {
         @Query("days") days: String,
     ): WeatherModel
 
+ /*   @GET("timezone.json")
+    suspend fun SearchLocation(
+        @Query("key") apiKey: String,
+        @Query("q") location: String,
+        @Query("days") days: String,
+    ): WeatherModel
+*/
 }
