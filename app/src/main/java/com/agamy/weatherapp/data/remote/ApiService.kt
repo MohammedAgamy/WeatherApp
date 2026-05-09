@@ -13,4 +13,12 @@ interface ApiService {
         @Query("q") location: String,
     ): WeatherModel
 
+
+    @GET("forecast.json")
+    suspend fun getHourWeather(
+        @Query("key") apiKey: String,
+        @Query("q") location: String,
+        @Query("days") days: String,
+    ): WeatherModel
+
 }

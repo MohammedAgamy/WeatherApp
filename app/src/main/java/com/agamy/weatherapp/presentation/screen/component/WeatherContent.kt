@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,14 +19,12 @@ import com.agamy.weatherapp.data.model.WeatherModel
 
 @Composable
 fun WeatherContent(weatherModel: WeatherModel) {
+
+
     // Top Info
     Column(
-        modifier = Modifier
-            // .align(Alignment.TopCenter)
-            .padding(top = 50.dp),
-        horizontalAlignment = Alignment.CenterHorizontally ,
-        verticalArrangement = Arrangement.Center
-
+        modifier = Modifier.offset(y = (-120).dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = weatherModel.location.country,

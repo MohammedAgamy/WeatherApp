@@ -37,6 +37,7 @@ import com.agamy.weatherapp.data.RetrofitClient
 import com.agamy.weatherapp.data.location.LocationProvider
 import com.agamy.weatherapp.data.model.WeatherModel
 import com.agamy.weatherapp.data.repository.WeatherRepositoryImpl
+import com.agamy.weatherapp.domain.usecase.GetHourUseCase
 import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
 import com.agamy.weatherapp.presentation.intent.WeatherIntent
 import com.agamy.weatherapp.presentation.state.WeatherState
@@ -58,9 +59,10 @@ fun WeatherScreen() {
     val apiService = remember { RetrofitClient.apiService }
     val repository = remember { WeatherRepositoryImpl(apiService) }
     val useCase = remember { GetWeatherUseCase(repository) }
+    val useCaseHour = remember { GetHourUseCase(repository) }
 
     val viewModel: WeatherViewModel = viewModel(
-        factory = WeatherViewModelFactory(useCase)
+        factory = WeatherViewModelFactory(useCase,useCaseHour)
     )
 
     val state by viewModel.state.collectAsState()
@@ -124,7 +126,7 @@ fun WeatherScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 4.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.TopCenter
             ) {
                 Box(
                     modifier = Modifier
@@ -137,13 +139,19 @@ fun WeatherScreen() {
         },
         sheetPeekHeight = 340.dp,
         sheetContent = {
-            WeatherBottomSheetContent()
+
+
+            val hourlyForecast = (state as? WeatherState.Success)?.hourlyForecast
+                ?: emptyList()
+            WeatherBottomSheetContent(hourlyForecast = hourlyForecast)
         }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
+
         ) {
             // Background
             Image(

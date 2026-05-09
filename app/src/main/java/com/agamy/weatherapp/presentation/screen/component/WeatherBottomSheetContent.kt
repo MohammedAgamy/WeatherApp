@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,9 +34,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.agamy.weatherapp.data.model.Forecast
+import com.agamy.weatherapp.data.model.Forecastday
+import com.agamy.weatherapp.data.model.Hour
+import com.agamy.weatherapp.data.model.WeatherModel
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 
 
 // ── Colors ──
@@ -46,7 +56,9 @@ private val PurpleText = Color(0xFFB39DDB)
 private val CardDark = Color(0xFF2A1F50)
 
 @Composable
-fun WeatherBottomSheetContent() {
+fun WeatherBottomSheetContent(
+    hourlyForecast: List<Hour> = emptyList()
+) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Hourly Forecast", "Weekly Forecast")
 
@@ -98,7 +110,7 @@ fun WeatherBottomSheetContent() {
 
         // ── Content ──
         when (selectedTab) {
-            0 -> HourlyForecastRow()
+            0 -> HourlyForecastRow(hourlyForecast)
             1 -> WeeklyForecastRow()
         }
 
@@ -171,28 +183,37 @@ fun WeatherBottomSheetContent() {
 
 // ── Hourly Row ──
 @Composable
-fun HourlyForecastRow() {
-    val hours = listOf(
-        HourWeather("12 AM", "19°", WeatherType.CLOUDY),
-        HourWeather("Now", "19°", WeatherType.RAINY, isNow = true),
-        HourWeather("2 AM", "18°", WeatherType.CLOUDY),
-        HourWeather("3 AM", "19°", WeatherType.SUNNY),
-        HourWeather("4 AM", "19°", WeatherType.CLOUDY),
-    )
+fun HourlyForecastRow(hour: List<Hour>) {
+
+    if (hour.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF7B5EA7), modifier = Modifier.size(32.dp))
+        }
+        return
+    }
+
     LazyRow(
         contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(hours) { HourlyItem(it) }
+        itemsIndexed(hour) { index, item ->       // ✅ itemsIndexed
+            HourlyItem(data = item, isNow = index == 0)
+        }
     }
 }
 
 @Composable
-fun HourlyItem(data: HourWeather) {
-    val bg = if (data.isNow)
+fun HourlyItem(data: Hour, isNow: Boolean = false) {
+    val bg = if (isNow)
         Brush.linearGradient(listOf(PurpleLight, PurpleDark))
     else
         Brush.linearGradient(listOf(CardDark, CardDark))
+    val iconUrl = "https:${data.condition.icon}"
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -201,12 +222,20 @@ fun HourlyItem(data: HourWeather) {
             .background(brush = bg, shape = RoundedCornerShape(20.dp))
             .padding(vertical = 14.dp, horizontal = 8.dp)
     ) {
-        Text(text = data.time, color = PurpleText, fontSize = 11.sp)
+
+        val timeDisplay = if (isNow) "Now" else data.time.split(" ").lastOrNull() ?: data.time
+        Text(text = timeDisplay, color = PurpleText, fontSize = 11.sp)
         Spacer(modifier = Modifier.height(10.dp))
-        Text(text = data.type.emoji, fontSize = 24.sp)
+        AsyncImage(
+            model = iconUrl,
+            contentDescription = data.condition.text,
+            modifier = Modifier.size(36.dp),
+            contentScale = ContentScale.Fit
+        )
+
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = data.temp,
+            text = "${data.temp_c.toInt()}°",
             color = Color.White,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold

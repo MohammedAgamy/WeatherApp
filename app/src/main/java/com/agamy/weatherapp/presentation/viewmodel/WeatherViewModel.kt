@@ -3,6 +3,7 @@ package com.agamy.weatherapp.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.agamy.weatherapp.domain.usecase.GetHourUseCase
 import com.agamy.weatherapp.domain.usecase.GetWeatherUseCase
 import com.agamy.weatherapp.presentation.intent.WeatherIntent
 import com.agamy.weatherapp.presentation.state.WeatherState
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
 class WeatherViewModel(
-    private val getWeatherUseCase: GetWeatherUseCase
+    private val getWeatherUseCase: GetWeatherUseCase,
+    private val getHourUseCase: GetHourUseCase
 ) : ViewModel() {
 
     private var lat: Double = 0.0
@@ -42,7 +44,7 @@ class WeatherViewModel(
                 when (intent) {
                     WeatherIntent.LoadWeather -> fetchWeather()
                     WeatherIntent.RefreshWeather -> fetchWeather()
-                    is WeatherIntent.LoadWeatherWithLocation  -> {
+                    is WeatherIntent.LoadWeatherWithLocation -> {
                         lat = intent.lat
                         lon = intent.lon
                         fetchWeather()
@@ -57,27 +59,35 @@ class WeatherViewModel(
     private suspend fun fetchWeather() {
         _state.value = WeatherState.Loading
 
-        getWeatherUseCase(lat, lon).fold(
-            onSuccess = { weather ->
-                _state.value = WeatherState.Success(weather)
+        val weatherResult = getWeatherUseCase(lat, lon)
+        val hourResult = getHourUseCase(lat, lon)
 
+
+        weatherResult.fold(
+            onSuccess = { weather ->
+                _state.value = WeatherState.Success(
+                    current = weather,
+                    hourlyForecast = hourResult.getOrDefault(emptyList()) // ✅
+                )
             },
             onFailure = { error ->
                 _state.value = WeatherState.Error(error.message ?: "Something went wrong")
-
             }
         )
+
 
     }
 }
 
+
 class WeatherViewModelFactory(
-    private val getWeatherUseCase: GetWeatherUseCase
+    private val getWeatherUseCase: GetWeatherUseCase,
+    private val getHourUseCase: GetHourUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WeatherViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return WeatherViewModel(getWeatherUseCase) as T
+            return WeatherViewModel(getWeatherUseCase, getHourUseCase) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

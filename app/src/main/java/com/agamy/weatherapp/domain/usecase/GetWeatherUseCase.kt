@@ -10,4 +10,7 @@ class GetWeatherUseCase(
     suspend operator fun invoke(lat: Double, lon: Double): Result<WeatherModel> {
         return repository.getWeather(lat, lon)
     }
+
+
+
 }

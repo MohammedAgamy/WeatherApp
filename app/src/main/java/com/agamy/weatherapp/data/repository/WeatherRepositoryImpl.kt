@@ -1,5 +1,6 @@
 package com.agamy.weatherapp.data.repository
 
+import com.agamy.weatherapp.data.model.Hour
 import com.agamy.weatherapp.data.model.WeatherModel
 import com.agamy.weatherapp.data.remote.ApiService
 import com.agamy.weatherapp.domain.repository.WeatherRepository
@@ -22,4 +23,22 @@ class WeatherRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    // data/repository/WeatherRepositoryImpl.kt
+    override suspend fun getHourWeather(lat: Double, lon: Double): Result<List<Hour>> {
+        return try {
+            val location = "$lat,$lon"
+            val response = apiService.getHourWeather(
+                apiKey = "1c8a282d913a48cc851101825242004",
+                location = location,
+                days = "1"
+            )
+            // ✅ استخرج الـ hours من الـ response
+            val hours = response.forecast.forecastday.firstOrNull()?.hour ?: emptyList()
+            Result.success(hours)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }
