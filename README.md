@@ -119,7 +119,7 @@ private const val API_KEY = "YOUR_API_KEY_HERE"
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/WeatherApp.git
+git clone https://github.com/MohammedAgamy/WeatherApp.git
 cd WeatherApp
 ```
 
@@ -230,7 +230,7 @@ MIT License — feel free to use this project for learning or personal use.
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Author "MohammedAgamy"
 
 Built with ❤️ using Kotlin + Jetpack Compose
 
