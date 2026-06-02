@@ -8,7 +8,7 @@ A modern Android weather application built with **Kotlin** and **Jetpack Compose
 
 > Add your screenshots here
 
----
+-----
 
 ## 🚀 Features
 
@@ -53,7 +53,7 @@ This project follows **Clean Architecture** with **MVI (Model-View-Intent)** pat
  ┗ 📄 Routes             # App routes sealed class
 ```
 
----
+-----
 
 ## 🔄 MVI Flow
 
