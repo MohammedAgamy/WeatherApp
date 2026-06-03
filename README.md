@@ -97,6 +97,7 @@ User Action (Intent)
 
 This app uses [WeatherAPI.com](https://www.weatherapi.com/)
 
+
 | Endpoint | Usage |
 |---|---|
 | `/current.json` | Current weather by lat/lon |
@@ -119,8 +120,10 @@ private const val API_KEY = "YOUR_API_KEY_HERE"
 
 ### 1. Clone the repo
 ```bash
+
 git clone https://github.com/MohammedAgamy/WeatherApp.git
 cd WeatherApp
+
 ```
 
 ### 2. Add your API Key
